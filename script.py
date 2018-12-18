@@ -3,6 +3,13 @@ import requests
 from lxml import html
 
 class MediumScraper:
+	'''
+	IDEAS
+	- extract handclap posts
+	- extract user highlights from posts because it will
+	be like going through snippets
+	- login to extract user bookmarks
+	'''
 	
 	def __init__(self, username):
 		self.username = username
