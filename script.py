@@ -1,5 +1,8 @@
 import json
 import requests
+
+import pandas as pd
+
 from lxml import html
 
 class MediumScraper:
@@ -46,15 +49,26 @@ class MediumScraper:
 
 		return userJson, clapsJson
 
+def parseJSON(json_file):
+	
+	# @todo: read json and extract only relevant fields
+
+	read_file = pd.read_json(json_file, lines=True)
+	return read_file
+
 
 if __name__ == '__main__':
+
+	r = parseJSON("user.json")
+	print(r)
+
 	# main()
 
-	obj = MediumScraper('tharangni')
-	a, b = obj.parseHTML(obj.getRequest())
+	# obj = MediumScraper('tharangni')
+	# a, b = obj.parseHTML(obj.getRequest())
 
-	with open('user.json', 'w') as f:
-		json.dump(a, f)
+	# with open('user.json', 'w') as f:
+	# 	json.dump(a, f)
 
-	with open('claps.json', 'w') as g:
-		json.dump(b, g)
+	# with open('claps.json', 'w') as g:
+	# 	json.dump(b, g)
