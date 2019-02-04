@@ -12,6 +12,11 @@ class MediumScraper:
 	- extract user highlights from posts because it will
 	be like going through snippets
 	- login to extract user bookmarks
+	- more can be done with the extracted highlights. For ex: using the extracted highlights you can: 
+		- create a summary of your "highlights" in the form of a word cloud
+		- classify the whole set into topics using unsupervised learning or etc
+		-- this might give you an idea of the topics which you like to read!!![COOL]
+
 	'''
 	
 	def __init__(self, username):
