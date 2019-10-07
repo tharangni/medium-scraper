@@ -14,8 +14,9 @@ def saveJSON(path, data):
 
 	# writes json data to file path
 
+	json_data = json.loads(data)
 	with open(path, 'w') as file:
-		json.dump(data, file)
+		json.dump(json_data, file)
 
 
 def parseJSON(json_file):
@@ -51,20 +52,19 @@ class MediumScraper:
 		return('https://medium.com/@'+self.username+'/')
 
 
-	def getClapsURL(self):
+	def getClapsURL(self, limit):
 		'''
 		Returns the url for claps
 
 		'''
-		return self.getUserProfile()+'has-recommended'
-		# return 'https://www.medium.com/search/posts?q=Data%20Science'
+		return self.getUserProfile()+'has-recommended?format=json&limit={}'.format(limit)
 
 
 	def getRequest(self):
 		'''
 		Gets the `claps` of the user profile
 		'''
-		URL = self.getClapsURL()
+		URL = self.getClapsURL(500)
 		medium_recommend = requests.get(URL)
 		tree = html.fromstring(medium_recommend.content)
 
@@ -100,10 +100,7 @@ class ClapsScraper(scrapy.Spider):
 
 		user = MediumScraper('tharangni')
 		
-		start_urls = [user.getClapsURL()]
-
-		# cookie = "__cfduid=d13dc96d7996d6bf5168dc50cf43610881546335152; uid=1e473cbcde46; sid=1:D2btGU5i9eacrLuBlsVoMMEQvrl8QBPMuE5hxBDfHyQDXw0bxZfnthWzo9/4jBqq; lightstep_guid/lite-web=4bb788422492a14e; lightstep_session_id=33a3ad460d691fcb; pr=1; tz=-120; sz=1351; xsrf=3std0BPdCjMD; __cfruid=59e31e646a3b110fdde50a4b3e2efffd626fbe49-1569357959"
-		# header = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36"
+		start_urls = [user.getClapsURL(500)]
 
 		for url in start_urls:
 			yield scrapy.Request(url, method='GET', callback=self.parse)
@@ -111,30 +108,29 @@ class ClapsScraper(scrapy.Spider):
 	def parse(self, response):
 
 		response_data = response.text
-		response_split = re.findall(r'<script>(.*?)</script>', response_data)
-		response_data = response_split[3:]
+		response_split = response_data.split("while(1);</x>")
+		response_data = response_split[-1].strip()
 
 		dt_string = datetime.now().strftime("%d%m%Y_%H%M%S")
 		filename = "medium_{}_claps_{}.json".format('tharangni', dt_string)
 
-		saveJSON(filename, response_data[-2].split("window.__APOLLO_STATE__ =")[-1])
-
-		df = parseJSON(filename)
-		
-		print(df.head(5))
+		saveJSON(filename, response_data)		
 
 		pass		
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
 	# r = parseJSON("user.json")
 	# print(r)
 
 	# main()
 
-	obj = MediumScraper('tharangni')
-	print(obj.getClapsURL())
+	# scrapy = ClapsScraper()
+	# scrapy.start_requests()
+
+	# obj = MediumScraper('tharangni')
+	# print(obj.getClapsURL())
 	# a, b = obj.parseHTML(obj.getRequest())
 
 	# with open('user.json', 'w') as f:
