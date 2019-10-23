@@ -1,8 +1,10 @@
+import os
 import re
 import json
 import scrapy
 import requests
 
+import numpy as np
 import pandas as pd
 
 from lxml import html
@@ -100,7 +102,7 @@ class ClapsScraper(scrapy.Spider):
 
 		user = MediumScraper('tharangni')
 		
-		start_urls = [user.getClapsURL(500)]
+		start_urls = [user.getClapsURL(1000)]
 
 		for url in start_urls:
 			yield scrapy.Request(url, method='GET', callback=self.parse)
@@ -119,22 +121,49 @@ class ClapsScraper(scrapy.Spider):
 		pass		
 
 
-# if __name__ == '__main__':
+class ClapsTable(object):
+	"""
+	docstring for ClapsTable
+	"""
+	def __init__(self, json_file):
+		super(ClapsTable, self).__init__()
+		self.df = pd.read_json(json_file)
 
-	# r = parseJSON("user.json")
-	# print(r)
 
-	# main()
+	def getDataFrame(self):
 
-	# scrapy = ClapsScraper()
-	# scrapy.start_requests()
+		post_ids = self.df['payload']['references']['Post'].keys()
+		posts_df = pd.DataFrame(index = post_ids, columns=['postId', 'title', 'subtitle', 'homeCollectionId', 
+												   'createdAt', 'uniqueSlug', 'creatorId', 'tags', 'totalClapCount',
+												  'userClapCount', 'readingTime'])
 
-	# obj = MediumScraper('tharangni')
-	# print(obj.getClapsURL())
-	# a, b = obj.parseHTML(obj.getRequest())
+		posts_df['postId'] = post_ids
+		for key in post_ids:
+			posts_df.at[key, 'title'] = self.df['payload']['references']['Post'][key]['title']
+			posts_df.at[key, 'createdAt'] = self.df['payload']['references']['Post'][key]['createdAt']
+			posts_df.at[key, 'uniqueSlug'] = self.df['payload']['references']['Post'][key]['slug']+'-'+key
+			posts_df.at[key, 'homeCollectionId'] = self.df['payload']['references']['Post'][key]['homeCollectionId']
+			posts_df.at[key, 'creatorId'] = self.df['payload']['references']['Post'][key]['creatorId']
+			posts_df.at[key, 'totalClapCount'] = self.df['payload']['references']['Post'][key]['virtuals']['totalClapCount']
+			posts_df.at[key, 'userClapCount'] = self.df['payload']['references']['Post'][key]['virtuals']['sectionCount']
+			posts_df.at[key, 'readingTime'] = round(self.df['payload']['references']['Post'][key]['virtuals']['readingTime'])
+			posts_df.at[key, 'tags'] = [tag['slug'] for tag in self.df['payload']['references']['Post'][key]['virtuals']['tags']]
+			
+			try:
+				posts_df.at[key, 'subtitle'] = self.df['payload']['references']['Post'][key]['content']['subtitle']
+			except:
+				posts_df.at[key, 'subtitle'] = np.nan
+			
 
-	# with open('user.json', 'w') as f:
-	# 	json.dump(a, f)
+		return posts_df
+		
 
-	# with open('claps.json', 'w') as g:
-	# 	json.dump(b, g)
+
+
+if __name__ == '__main__':
+
+	# os.system("scrapy runspider script.py")
+
+	claps = ClapsTable("medium_tharangni_claps_23102019_200135.json")
+	clapsDf = claps.getDataFrame()
+	clapsDf.to_csv("claps_v1.csv", index=False)
