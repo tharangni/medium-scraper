@@ -134,13 +134,13 @@ class ClapsTable(object):
 
 		post_ids = self.df['payload']['references']['Post'].keys()
 		posts_df = pd.DataFrame(index = post_ids, columns=['postId', 'title', 'subtitle', 'homeCollectionId', 
-												   'createdAt', 'uniqueSlug', 'creatorId', 'tags', 'totalClapCount',
+												   'postedAt', 'uniqueSlug', 'creatorId', 'tags', 'totalClapCount',
 												  'userClapCount', 'readingTime'])
 
 		posts_df['postId'] = post_ids
 		for key in post_ids:
 			posts_df.at[key, 'title'] = self.df['payload']['references']['Post'][key]['title']
-			posts_df.at[key, 'createdAt'] = self.df['payload']['references']['Post'][key]['createdAt']
+			posts_df.at[key, 'postedAt'] = int(str(self.df['payload']['references']['Post'][key]['firstPublishedAt'])[:-3])
 			posts_df.at[key, 'uniqueSlug'] = self.df['payload']['references']['Post'][key]['slug']+'-'+key
 			posts_df.at[key, 'homeCollectionId'] = self.df['payload']['references']['Post'][key]['homeCollectionId']
 			posts_df.at[key, 'creatorId'] = self.df['payload']['references']['Post'][key]['creatorId']
