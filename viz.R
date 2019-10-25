@@ -1,4 +1,5 @@
 library(ggplot2)
+library(ggsci)
 library(dplyr)
 library(viridis)
 library(anytime)
@@ -66,13 +67,25 @@ charCheck <- function(a) {
 tagsDf$tags <- tagsDf$tags %>% strsplit("'")
 tagsDf$tags <- lapply(tagsDf$tags, charCheck)
 uniqueTags <- tidyr::unnest(tagsDf, cols = "tags")
-uniqueTags <- aggregate(uniqueTags$userClapCount, by=list(tags = uniqueTags$tags), FUN=sum)
+uniqueTags <- aggregate(uniqueTags$userClapCount, 
+                        by=list(tags = uniqueTags$tags), 
+                        FUN=sum)
 
 # wordcloud of tag frequencies by nclaps
-ggplot(uniqueTags, aes(x=tags, y=nClaps)) + 
+colnames(uniqueTags) <- c("tags", "nClaps")
+uniqueTags <- uniqueTags[order(-uniqueTags$nClaps),]
+rownames(uniqueTags) <- NULL
+subsetTags <- uniqueTags[uniqueTags$nClaps>10,]
+
+ggplot(subsetTags, aes(x=tags, y=nClaps)) + 
   geom_point() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size=6))
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size=8))
 
 # tags vs. reading time
 
 # posts <-> claps <-> reading time <<->> tags
+# see the behaviour of number of claps over time(years)
+ggplot(df, aes(x = datePosted, y = userClapCount)) + 
+  scale_color_viridis(option = "C", direction = -1) +
+  geom_point(aes(color=yearPosted)) + 
+  facet_grid(rows = vars(yearPosted)) 
