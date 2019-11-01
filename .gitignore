@@ -1,4 +1,5 @@
 ignore/
+.ipynb_checkpoints/
 *.json
 *.csv
 *.RData
