@@ -1,8 +1,13 @@
-library(ggplot2)
 library(ggsci)
 library(dplyr)
 library(viridis)
+library(ggplot2)
 library(anytime)
+library(wordcloud)
+library(hrbrthemes)
+library(RColorBrewer)
+set.seed(101)
+
 
 df <- read.csv("claps_v1.csv", stringsAsFactors = FALSE)
 df$datePosted <- as.POSIXlt(df$postedAt, origin="1970-01-01")
@@ -13,48 +18,35 @@ df$datePosted <- as.POSIXct(df$datePosted) %>% unlist
 df <- df %>% filter(nchar(tags)>3, readingTime > 0)
 
 # count of number of posts vs. count of freq. of claps : distribution of user claps
-# hist(df$userClapCount,
-#      breaks = 18,
-#      probability = TRUE)
-# lines(density(df$userClapCount))
+a <- data.frame(item = NA, freq = df$userClapCount)
+a$item <- "userClapCount"
+b <- data.frame(item = NA, freq = df$readingTime)
+b$item <- "readingTime"
+c <- rbind(a, b)
+rm(list = c("a", "b"))
 
+ggplot(c, aes(x = freq, fill = item)) + 
+  geom_density(alpha = 0.75) +
+  scale_fill_brewer(palette="RdYlGn") + 
+  theme_minimal() +
+  labs(title = "Distribution of userClaps and readingTime")
 
-ggplot(data = df, aes(x = userClapCount)) + 
-  geom_histogram(aes(y = ..density..), binwidth = 1) + 
-  geom_density(alpha = 0.2, fill = "#00FF00") +
-  geom_vline(aes(xintercept = mean(userClapCount)),
-             linetype="dashed", color="black") + 
-  scale_x_continuous("User Claps", labels = as.character(df$userClapCount), breaks = df$userClapCount) +
-  # coord_cartesian(xlim = c(1, 38)) + 
-  expand_limits(x = 0, y = 0) +
-  labs(title = "Distribution of user claps") +
-  theme(panel.grid.major.x = element_blank(), panel.grid.minor = element_blank())
-
-
-# distribution of reading time for clapped posts
-ggplot(data = df, aes(x = readingTime)) + 
-  geom_histogram(aes(y = ..density..), binwidth = 1) + 
-  geom_density(alpha = 0.2, fill = "#FF6666") +
-  geom_vline(aes(xintercept = mean(readingTime)),
-             linetype="dashed", color="black") + 
-  scale_x_continuous("Reading Time", labels = as.character(df$readingTime), breaks = df$readingTime) +
-  labs(title = "Distribution of reading time for clapped posts") +
-  theme(panel.grid.major.x = element_blank(), panel.grid.minor = element_blank())
 
 # claps vs. reading time
 # this results in a dot plot (strip chart)
 userClapsVsReadingTime <- df %>% select(userClapCount, readingTime)
-# userClapsVsReadingTime <- distinct(userClapsVsReadingTime)
+tt <- userClapsVsReadingTime %>% group_by(userClapCount, readingTime) %>% summarise(freq = (sum(readingTime)))
+tt$freq <- tt$freq/tt$readingTime
 
-ggplot(data = userClapsVsReadingTime, aes(x = userClapCount, y = readingTime, fill = userClapCount)) + 
-  geom_violin(aes(group = userClapCount), trim = FALSE) +
-  scale_fill_viridis(direction = -1) +
-  geom_jitter(position = position_jitter(0.2), cex=1.2, alpha = 0.5, color="#555555") + 
-  labs(title = "User Clap Count vs. Reading time") 
+ggplot(data = tt, aes(x = userClapCount, y = readingTime, size = freq)) + 
+  geom_point(alpha=0.7, shape=21, color="black", fill = "#DD4124") +
+  scale_size(range = c(1, 12), name="Frequency") +
+  scale_x_continuous(breaks=seq(0, max(tt$readingTime), 2)) +
+  scale_y_continuous(breaks=seq(0, max(tt$userClapCount), 2)) +
+  theme_minimal() +
+  labs(title = "User Clap Count vs. Reading time") +
+  theme(panel.grid.major.x = element_blank(), panel.grid.major.y = element_blank()) 
 
-  # stat_summary(fun.data="mean_sdl", mult=1, geom="crossbar", width=0.5)
-  # stat_summary(fun.y=mean, geom="line", size=0.3, color="red")
-  # coord_cartesian(xlim = c(0, 30), ylim = c(0, 30)) 
 
 # tags vs. claps
 tagsDf <- df %>% select(tags, userClapCount)
@@ -75,17 +67,7 @@ uniqueTags <- aggregate(uniqueTags$userClapCount,
 colnames(uniqueTags) <- c("tags", "nClaps")
 uniqueTags <- uniqueTags[order(-uniqueTags$nClaps),]
 rownames(uniqueTags) <- NULL
-subsetTags <- uniqueTags[uniqueTags$nClaps>10,]
+subsetTags <- uniqueTags[uniqueTags$nClaps>25,]
 
-ggplot(subsetTags, aes(x=tags, y=nClaps)) + 
-  geom_point() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size=8))
-
-# tags vs. reading time
-
-# posts <-> claps <-> reading time <<->> tags
-# see the behaviour of number of claps over time(years)
-ggplot(df, aes(x = datePosted, y = userClapCount)) + 
-  scale_color_viridis(option = "C", direction = -1) +
-  geom_point(aes(color=yearPosted)) + 
-  facet_grid(rows = vars(yearPosted)) 
+wordcloud(words = subsetTags$tags, freq = subsetTags$nClaps, min.freq = 1, rot.per=0.35,
+          max.words=200, random.order=FALSE, colors=brewer.pal(8, "RdYlGn"))
