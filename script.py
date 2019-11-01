@@ -57,9 +57,15 @@ class MediumScraper:
 	def getClapsURL(self, limit):
 		'''
 		Returns the url for claps
-
 		'''
 		return self.getUserProfile()+'has-recommended?format=json&limit={}'.format(limit)
+
+
+	def getHighlightsURL(self, limit):
+		'''
+		Returns the url for highlights
+		'''
+		return '{}highlights?format=json&limit={}'.format(self.getUserProfile(), limit)
 
 
 	def getRequest(self):
@@ -121,6 +127,38 @@ class ClapsScraper(scrapy.Spider):
 		pass		
 
 
+class HighlightsScraper(scrapy.Spider):
+	'''
+	docstring for HighlightsScraper
+	'''
+	name = "highlights_scraper"
+	handle_http_list = [400, 401]
+	auto_throttle_enable = True
+	
+
+	def start_requests(self):
+
+		user = MediumScraper('tharangni')
+		
+		start_urls = [user.getHighlightsURL(500)]
+
+		for url in start_urls:
+			yield scrapy.Request(url, method='GET', callback=self.parse)
+
+	def parse(self, response):
+
+		response_data = response.text
+		response_split = response_data.split("while(1);</x>")
+		response_data = response_split[-1].strip()
+
+		dt_string = datetime.now().strftime("%d%m%Y_%H%M%S")
+		filename = "medium_{}_highlights_{}.json".format('tharangni', dt_string)
+
+		saveJSON(filename, response_data)		
+
+		pass		
+
+
 class ClapsTable(object):
 	"""
 	docstring for ClapsTable
@@ -156,6 +194,33 @@ class ClapsTable(object):
 			
 
 		return posts_df
+
+
+class HighlightsTable(object):
+	"""
+	docstring for HighlightsTable
+	"""
+	def __init__(self, json_file):
+		super(HighlightsTable, self).__init__()
+		self.df = pd.read_json(json_file)
+
+
+	def getDataFrame(self):
+
+		quote_ids = self.df['payload']['references']['Quote'].keys()
+		quote_df = pd.DataFrame(index = quote_ids, columns=['quoteId', 'postId', 'highlightedAt', 'highlightDate', 'quoteText'])
+
+		quote_df['quoteId'] = quote_ids
+		
+		for key in quote_ids:
+			
+			quote_df.at[key, 'postId'] = self.df['payload']['references']['Quote'][key]['postId']
+			quote_df.at[key, 'highlightedAt'] = int(str(self.df['payload']['references']['Quote'][key]['createdAt'])[:-3])
+			quote_df.at[key, 'highlightDate'] = datetime.utcfromtimestamp(quote_df.at[key, 'highlightedAt']).strftime('%d-%m-%Y %H:%M:%S')
+			quote_df.at[key, 'quoteText'] = self.df['payload']['references']['Quote'][key]['paragraphs'][0]['text']
+			
+
+		return quote_df
 		
 
 
@@ -164,6 +229,10 @@ if __name__ == '__main__':
 
 	# os.system("scrapy runspider script.py")
 
-	claps = ClapsTable("medium_tharangni_claps_23102019_200135.json")
-	clapsDf = claps.getDataFrame()
-	clapsDf.to_csv("claps_v1.csv", index=False)
+	# claps = ClapsTable("medium_tharangni_claps_23102019_200135.json")
+	# clapsDf = claps.getDataFrame()
+	# clapsDf.to_csv("claps_v1.csv", index=False)
+
+	highlights = HighlightsTable("medium_tharangni_highlights_01112019_225040.json")
+	quoteDf = highlights.getDataFrame()
+	quoteDf.to_csv("highlights_v1.csv", index=False)
