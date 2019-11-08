@@ -10,10 +10,6 @@ set.seed(101)
 
 ############################################################
 
-numberOfWords <- function(sentence) {
-  return(sapply(strsplit(sentence, " "), length))
-}
-
 getmode <- function(v) {
   uniqv <- unique(v)
   uniqv[which.max(tabulate(match(v, uniqv)))]
@@ -25,16 +21,20 @@ getmode <- function(v) {
 df <- read.csv("highlights_v1.csv", stringsAsFactors = F)
 df$highlightDate <- as.POSIXct(df$highlightedAt, origin="1970-01-01")
 
-df$quoteLength <- lapply(df$quoteText, numberOfWords) %>% unlist
-
 
 ############################################################
 
 ggplot(df, aes(x = highlightDate)) + 
   geom_histogram(bins=40, color = "#000000") 
 
-ggplot(df, aes(x = quoteLength)) + 
+ggplot(df, aes(x = numOfWords)) + 
   geom_histogram(bins = 40) +
-  stat_function(fun = function(x) dnorm(x, mean = mean(df$quoteLength), 
-                                        sd = sd(df$quoteLength)) * length(df$quoteLength) * 8,
+  stat_function(fun = function(x) dnorm(x, mean = mean(df$numOfWords), 
+                                        sd = sd(df$numOfWords)) * length(df$numOfWords) * 8,
+                color = "black", size = 1)
+
+ggplot(df, aes(x = numOfSentences)) + 
+  geom_histogram(bins = 12) +
+  stat_function(fun = function(x) dnorm(x, mean = mean(df$numOfSentences), 
+                                        sd = sd(df$numOfSentences)) * length(df$numOfSentences) * 1,
                 color = "black", size = 1)

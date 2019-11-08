@@ -9,6 +9,7 @@ import pandas as pd
 
 from lxml import html
 from datetime import datetime
+from nltk import tokenize
 
 
 
@@ -27,6 +28,14 @@ def parseJSON(json_file):
 
 	read_file = pd.read_json(json_file, lines=True)
 	return read_file
+
+
+def sentenceCounter(sentence: str) -> int:
+
+	# return number of sentences in paragraph
+
+    split = tokenize.sent_tokenize(sentence)
+    return len(split)
 
 
 class MediumScraper:
@@ -208,7 +217,8 @@ class HighlightsTable(object):
 	def getDataFrame(self):
 
 		quote_ids = self.df['payload']['references']['Quote'].keys()
-		quote_df = pd.DataFrame(index = quote_ids, columns=['quoteId', 'postId', 'highlightedAt', 'highlightDate', 'quoteText'])
+		quote_df = pd.DataFrame(index = quote_ids, columns=['quoteId', 'postId', 'highlightedAt', 
+			'highlightDate', 'quoteText', 'numOfSentences', 'numOfWords'])
 
 		quote_df['quoteId'] = quote_ids
 		
@@ -218,6 +228,8 @@ class HighlightsTable(object):
 			quote_df.at[key, 'highlightedAt'] = int(str(self.df['payload']['references']['Quote'][key]['createdAt'])[:-3])
 			quote_df.at[key, 'highlightDate'] = datetime.utcfromtimestamp(quote_df.at[key, 'highlightedAt']).strftime('%d-%m-%Y %H:%M:%S')
 			quote_df.at[key, 'quoteText'] = self.df['payload']['references']['Quote'][key]['paragraphs'][0]['text']
+			quote_df.at[key, 'numOfSentences'] = sentenceCounter(quote_df.at[key, 'quoteText'])
+			quote_df.at[key, 'numOfWords'] = len(quote_df.at[key, 'quoteText'].split(" "))
 			
 
 		return quote_df
