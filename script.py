@@ -34,8 +34,8 @@ def sentenceCounter(sentence: str) -> int:
 
 	# return number of sentences in paragraph
 
-    split = tokenize.sent_tokenize(sentence)
-    return len(split)
+	split = tokenize.sent_tokenize(sentence)
+	return len(split)
 
 
 class MediumScraper:
@@ -217,8 +217,11 @@ class HighlightsTable(object):
 	def getDataFrame(self):
 
 		quote_ids = self.df['payload']['references']['Quote'].keys()
-		quote_df = pd.DataFrame(index = quote_ids, columns=['quoteId', 'postId', 'highlightedAt', 
-			'highlightDate', 'quoteText', 'numOfSentences', 'numOfWords'])
+		post_ids = self.df['payload']['references']['Post']
+
+		quote_df = pd.DataFrame(index = quote_ids, columns=['quoteId', 'postId', 'highlightedAt', 'highlightDate',
+												   'highlightTimeHour', 'highlightTimeDoW', 'postTitle',
+												   'quoteText', 'numOfSentences', 'numOfWords', 'language', 'tags'])
 
 		quote_df['quoteId'] = quote_ids
 		
@@ -227,10 +230,14 @@ class HighlightsTable(object):
 			quote_df.at[key, 'postId'] = self.df['payload']['references']['Quote'][key]['postId']
 			quote_df.at[key, 'highlightedAt'] = int(str(self.df['payload']['references']['Quote'][key]['createdAt'])[:-3])
 			quote_df.at[key, 'highlightDate'] = datetime.utcfromtimestamp(quote_df.at[key, 'highlightedAt']).strftime('%d-%m-%Y %H:%M:%S')
+			quote_df.at[key, 'highlightTimeDoW'] = datetime.utcfromtimestamp(quote_df.at[key, 'highlightedAt']).strftime('%A')
+			quote_df.at[key, 'highlightTimeHour'] = datetime.utcfromtimestamp(quote_df.at[key, 'highlightedAt']).strftime('%H')    
 			quote_df.at[key, 'quoteText'] = self.df['payload']['references']['Quote'][key]['paragraphs'][0]['text']
 			quote_df.at[key, 'numOfSentences'] = sentenceCounter(quote_df.at[key, 'quoteText'])
 			quote_df.at[key, 'numOfWords'] = len(quote_df.at[key, 'quoteText'].split(" "))
-			
+			quote_df.at[key, 'postTitle'] = post_ids[quote_df.at[key, 'postId']]['title']
+			quote_df.at[key, 'language'] = post_ids[quote_df.at[key, 'postId']]['detectedLanguage']    
+			quote_df.at[key, 'tags'] = [tag['slug'] for tag in post_ids[quote_df.at[key, 'postId']]['virtuals']['tags']]
 
 		return quote_df
 		
@@ -245,6 +252,6 @@ if __name__ == '__main__':
 	# clapsDf = claps.getDataFrame()
 	# clapsDf.to_csv("claps_v1.csv", index=False)
 
-	highlights = HighlightsTable("medium_tharangni_highlights_01112019_225040.json")
+	highlights = HighlightsTable("medium_tharangni_highlights_08112019_232305.json")
 	quoteDf = highlights.getDataFrame()
 	quoteDf.to_csv("highlights_v1.csv", index=False)

@@ -1,5 +1,6 @@
 library(ggsci)
 library(dplyr)
+library(e1071)
 library(viridis)
 library(ggplot2)
 library(anytime)
@@ -22,6 +23,16 @@ df <- read.csv("highlights_v1.csv", stringsAsFactors = F)
 df$highlightDate <- as.POSIXct(df$highlightedAt, origin="1970-01-01")
 
 
+a <- data.frame(item = NA, freq = df$numOfSentences*20)
+a$item <- "numOfSentences"
+b <- data.frame(item = NA, freq = df$numOfWords)
+b$item <- "numOfWords"
+c <- rbind(a, b)
+rm(list = c("a", "b"))
+
+skewness(df$numOfSentences)
+skewness(df$numOfWords)
+
 ############################################################
 
 ggplot(df, aes(x = highlightDate)) + 
@@ -38,3 +49,12 @@ ggplot(df, aes(x = numOfSentences)) +
   stat_function(fun = function(x) dnorm(x, mean = mean(df$numOfSentences), 
                                         sd = sd(df$numOfSentences)) * length(df$numOfSentences) * 1,
                 color = "black", size = 1)
+
+ggplot(c, aes(x = freq, fill = item)) + 
+  geom_density(alpha = 0.75) +
+  scale_fill_brewer(palette="RdYlGn") + 
+  theme_minimal() +
+  labs(title = "Distribution of numOfWords and numOfSentences")
+
+ggplot(df, aes(x=numOfWords, y = numOfSentences))  +
+  geom_point() 
