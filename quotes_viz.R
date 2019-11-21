@@ -20,10 +20,10 @@ getmode <- function(v) {
 ############################################################
 
 df <- read.csv("highlights_v1.csv", stringsAsFactors = F)
-df$highlightDate <- as.POSIXct(df$highlightedAt, origin="1970-01-01")
+# df$highlightDateC <- as.POSIXct(df$highlightedAt, origin="1970-01-01")
 
 
-a <- data.frame(item = NA, freq = df$numOfSentences*20)
+a <- data.frame(item = NA, freq = df$numOfSentences*20) #multiply it with 10 to scale up
 a$item <- "numOfSentences"
 b <- data.frame(item = NA, freq = df$numOfWords)
 b$item <- "numOfWords"
@@ -35,8 +35,8 @@ skewness(df$numOfWords)
 
 ############################################################
 
-ggplot(df, aes(x = highlightDate)) + 
-  geom_histogram(bins=40, color = "#000000") 
+# ggplot(df, aes(x = highlightDate)) + 
+#   geom_histogram(bins=40, color = "#000000") 
 
 ggplot(df, aes(x = numOfWords)) + 
   geom_histogram(bins = 40) +
@@ -58,3 +58,24 @@ ggplot(c, aes(x = freq, fill = item)) +
 
 ggplot(df, aes(x=numOfWords, y = numOfSentences))  +
   geom_point() 
+
+dow_table <- table(df$highlightTimeDoW)
+dow_levels <- names(dow_table)[c(4, 2, 6, 7, 5, 1, 3)]
+
+ggplot(df, aes(x = highlightTimeDoW)) + 
+  geom_histogram(stat="count") + 
+  stat_count(aes(y=..count.., label=..count..), geom="text", vjust=-.1) +
+  scale_x_discrete(limits = dow_levels) +
+  labs(title = "Highlight frequency according to day of week") + 
+  xlab("Day of Week") +
+  ylab("Number of highlights") +
+  theme_minimal()
+
+ggplot(df, aes(x = highlightTimeHour)) + 
+  geom_histogram(stat="count") + 
+  stat_count(aes(y=..count.., label=..count..), geom="text", vjust=-.1) +
+  labs(title = "Highlight frequency according to hour of day") + 
+  xlab("Hour of day") +
+  ylab("Number of highlights") +
+  theme_minimal()
+
