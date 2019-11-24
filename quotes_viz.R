@@ -1,3 +1,4 @@
+library(tm)
 library(ggsci)
 library(dplyr)
 library(e1071)
@@ -79,3 +80,19 @@ ggplot(df, aes(x = highlightTimeHour)) +
   ylab("Number of highlights") +
   theme_minimal()
 
+# wordcloud of highlighted text & post titles
+d <- read.csv("word_freq_highlights_v1.csv", stringsAsFactors = FALSE)
+
+png("wordcloud_quote.png", width=1200,height=1200)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1, rot.per=0.15,
+          max.words=300, random.order=F, colors=brewer.pal(8, "Dark2"),
+          vfont=c("sans serif","plain"), scale=c(8,.3))
+dev.off()
+
+t <- read.csv("word_freq_title_v1.csv", stringsAsFactors = FALSE)
+
+png("wordcloud_title.png", width=1200,height=1200)
+wordcloud(words = t$word, freq = t$freq, min.freq = 1, rot.per=0.15,
+          max.words=Inf, random.order=F, colors=brewer.pal(8, "Dark2"),
+          vfont=c("sans serif","plain"), scale=c(8,.3))
+dev.off()

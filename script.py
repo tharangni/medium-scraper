@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import string
 import scrapy
 import requests
 
@@ -8,8 +9,12 @@ import numpy as np
 import pandas as pd
 
 from lxml import html
+
 from datetime import datetime
+from collections import Counter
+
 from nltk import tokenize
+from nltk.corpus import stopwords
 
 
 
@@ -36,6 +41,21 @@ def sentenceCounter(sentence: str) -> int:
 
 	split = tokenize.sent_tokenize(sentence)
 	return len(split)
+
+
+def preprocessQuote(text: str) -> str:
+
+	# return preprocessed quote
+
+	stop_words = set(stopwords.words('english'))
+	
+	words = re.split(r'\W+', text.lower())
+	table = str.maketrans('', '', string.punctuation)
+	stripped = [w.translate(table) for w in words]
+	stopped = [w for w in stripped if not w in stop_words]
+	sentence = ' '.join([str(w) for w in stopped])
+	
+	return sentence
 
 
 class MediumScraper:
@@ -242,6 +262,23 @@ class HighlightsTable(object):
 		return quote_df
 		
 
+	def getWordFrequencies(self, df, column):
+
+		word_freq = Counter()
+		
+		a = df[column].apply(lambda x: preprocessQuote(x))
+		b = list(a)
+
+		for sent in b:
+			for word in sent.split(' '):
+				if word.isalpha() and len(word)>1:
+					word_freq[word]+=1
+
+		wf_df = pd.DataFrame.from_dict(word_freq, orient='index').reset_index()
+		wf_df.columns = ['word', 'freq']
+
+		return wf_df
+
 
 
 if __name__ == '__main__':
@@ -253,5 +290,13 @@ if __name__ == '__main__':
 	# clapsDf.to_csv("claps_v1.csv", index=False)
 
 	highlights = HighlightsTable("medium_tharangni_highlights_08112019_232305.json")
+	
 	quoteDf = highlights.getDataFrame()
 	quoteDf.to_csv("highlights_v1.csv", index=False)
+	
+	wordFreqDf = highlights.getWordFrequencies(quoteDf, 'quoteText')
+	wordFreqDf.to_csv("word_freq_highlights_v1.csv", index=False)
+
+	titleFreqDf = highlights.getWordFrequencies(quoteDf, 'postTitle')
+	titleFreqDf.to_csv("word_freq_title_v1.csv", index=False)
+	
