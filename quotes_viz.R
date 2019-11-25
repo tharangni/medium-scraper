@@ -24,7 +24,7 @@ df <- read.csv("highlights_v1.csv", stringsAsFactors = F)
 # df$highlightDateC <- as.POSIXct(df$highlightedAt, origin="1970-01-01")
 
 
-a <- data.frame(item = NA, freq = df$numOfSentences*20) #multiply it with 10 to scale up
+a <- data.frame(item = NA, freq = df$numOfSentences*1) #multiply it with 10 to scale up
 a$item <- "numOfSentences"
 b <- data.frame(item = NA, freq = df$numOfWords)
 b$item <- "numOfWords"
@@ -83,7 +83,7 @@ ggplot(df, aes(x = highlightTimeHour)) +
 # wordcloud of highlighted text & post titles
 d <- read.csv("word_freq_highlights_v1.csv", stringsAsFactors = FALSE)
 
-png("wordcloud_quote.png", width=1200,height=1200)
+png("wordcloud_quote.png", width=1000,height=1000)
 wordcloud(words = d$word, freq = d$freq, min.freq = 1, rot.per=0.15,
           max.words=300, random.order=F, colors=brewer.pal(8, "Dark2"),
           vfont=c("sans serif","plain"), scale=c(8,.3))
@@ -91,7 +91,7 @@ dev.off()
 
 t <- read.csv("word_freq_title_v1.csv", stringsAsFactors = FALSE)
 
-png("wordcloud_title.png", width=1200,height=1200)
+png("wordcloud_title.png", width=1000,height=1000)
 wordcloud(words = t$word, freq = t$freq, min.freq = 1, rot.per=0.15,
           max.words=Inf, random.order=F, colors=brewer.pal(8, "Dark2"),
           vfont=c("sans serif","plain"), scale=c(8,.3))

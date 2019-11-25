@@ -247,12 +247,17 @@ class HighlightsTable(object):
 		
 		for key in quote_ids:
 			
+
 			quote_df.at[key, 'postId'] = self.df['payload']['references']['Quote'][key]['postId']
 			quote_df.at[key, 'highlightedAt'] = int(str(self.df['payload']['references']['Quote'][key]['createdAt'])[:-3])
 			quote_df.at[key, 'highlightDate'] = datetime.utcfromtimestamp(quote_df.at[key, 'highlightedAt']).strftime('%d-%m-%Y %H:%M:%S')
 			quote_df.at[key, 'highlightTimeDoW'] = datetime.utcfromtimestamp(quote_df.at[key, 'highlightedAt']).strftime('%A')
 			quote_df.at[key, 'highlightTimeHour'] = datetime.utcfromtimestamp(quote_df.at[key, 'highlightedAt']).strftime('%H')    
-			quote_df.at[key, 'quoteText'] = self.df['payload']['references']['Quote'][key]['paragraphs'][0]['text']
+			
+			begin = self.df['payload']['references']['Quote'][key]['startOffset']
+			end = self.df['payload']['references']['Quote'][key]['endOffset']
+			quote_df.at[key, 'quoteText'] = self.df['payload']['references']['Quote'][key]['paragraphs'][0]['text'][begin:end]
+			
 			quote_df.at[key, 'numOfSentences'] = sentenceCounter(quote_df.at[key, 'quoteText'])
 			quote_df.at[key, 'numOfWords'] = len(quote_df.at[key, 'quoteText'].split(" "))
 			quote_df.at[key, 'postTitle'] = post_ids[quote_df.at[key, 'postId']]['title']
@@ -266,7 +271,8 @@ class HighlightsTable(object):
 
 		word_freq = Counter()
 		
-		a = df[column].apply(lambda x: preprocessQuote(x))
+		a = df[column].drop_duplicates(keep=False, inplace=False)
+		a = a.apply(lambda x: preprocessQuote(x))
 		b = list(a)
 
 		for sent in b:
