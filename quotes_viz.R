@@ -5,6 +5,8 @@ library(e1071)
 library(viridis)
 library(ggplot2)
 library(anytime)
+library(tidyverse)
+library(lubridate)
 library(wordcloud)
 library(hrbrthemes)
 library(RColorBrewer)
@@ -21,7 +23,7 @@ getmode <- function(v) {
 ############################################################
 
 df <- read.csv("highlights_v1.csv", stringsAsFactors = F)
-# df$highlightDateC <- as.POSIXct(df$highlightedAt, origin="1970-01-01")
+df$highlightDateC <- as.POSIXct(df$highlightedAt, origin="1970-01-01", tz="EEST")
 
 
 a <- data.frame(item = NA, freq = df$numOfSentences*1) #multiply it with 10 to scale up
@@ -96,3 +98,22 @@ wordcloud(words = t$word, freq = t$freq, min.freq = 1, rot.per=0.15,
           max.words=Inf, random.order=F, colors=brewer.pal(8, "Dark2"),
           vfont=c("sans serif","plain"), scale=c(8,.3))
 dev.off()
+
+# seasonality if any
+
+dates <- subset(df, select = c("highlightDateC", "numOfWords"))
+dates$highlightDateC <- dates$highlightDateC
+
+season <- as_tibble(dates) %>% 
+  rename_all(tolower) %>% 
+  mutate(date = as.Date(dates$highlightDateC))
+
+season <- season %>% 
+  mutate(
+    year = factor(year(date)),     # use year to define separate curves
+    date_x = update(date, year = 1)  # use a constant year for the x-axis
+  ) 
+
+ggplot(season, aes(date_x, numofwords, color = year)) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b") +
+  geom_point() + coord_polar()
